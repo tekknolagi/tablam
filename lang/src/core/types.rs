@@ -172,6 +172,12 @@ impl Column {
     pub fn as_slice<T: ColumnType>(&self) -> &[T] {
         T::as_slice(self)
     }
+
+    /// column.len()
+    pub fn len<T: ColumnType>(&self) -> usize {
+        T::as_slice(self).len()
+    }
+
 }
 
 #[derive(Debug, Clone)]
@@ -189,7 +195,7 @@ impl Frame {
     }
 
     pub fn new(columns: Vec<Column>) -> Self {
-        let total = 1..columns.len();
+        let total = 0..columns.len();
         let names:Names = total.map(| x | format!("col{}", x).to_string() ).collect();
 
         Frame {
@@ -213,7 +219,9 @@ pub enum Operator {
     Eq,
     NotEq,
     Less,
+    LessEq,
     Greater,
+    GreaterEq,
     Not,
     //Math
     Add,
