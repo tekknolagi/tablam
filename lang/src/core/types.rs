@@ -179,6 +179,10 @@ impl Schema {
         Self::new(vec![field])
     }
 
+    pub fn scalar_field(kind:DataType) -> Self {
+        Self::new_single("it", kind)
+    }
+
     pub fn named(&self, name:&str) -> Option<(usize, &Field)> {
         self.columns
             .iter()
@@ -345,6 +349,49 @@ pub struct Frame {
     pub len     :usize,
     pub names   :Schema,
     pub data    :RVec<Data>,
+}
+
+impl From<Scalar> for Frame {
+    fn from(of: Scalar) -> Self {
+        let dt = match of {
+            Scalar::None => DataType::None,
+            Scalar::Bool(_) => DataType::Bool,
+            Scalar::I32(_) => DataType::I32,
+            Scalar::I64(_) => DataType::I64,
+            Scalar::UTF8(_) => DataType::UTF8,
+            Scalar::Tuple(_) => DataType::Tuple,
+        };
+        Frame {
+            layout: Layout::Scalar,
+            len: 1,
+            names: Schema::scalar_field(dt.clone()),
+            data: vec!(to_data!(vec![of], dt.clone()).into()).into(),
+        }
+    }
+}
+
+impl From<i32> for Frame {
+    fn from(of: i32) -> Self {
+        Frame {
+            layout: Layout::Scalar,
+            len: 1,
+            names: Schema::scalar_field(DataType::I32),
+            data: vec!(to_data!(vec![of], DataType::I32).into()).into(),
+        }
+    }
+}
+
+use std::ops::{Add};
+impl Add for Frame {
+    type Output = Frame;
+
+    fn add(self, other: Frame) -> Frame {
+        match (self.layout, other.layout) {
+            (Layout::Scalar, Layout::Scalar) =>
+                (self.data[0].data[0].clone() + other.data[0].data[0].clone()).into(),
+            p => panic!("Cannot add {:?}", p),
+        }
+    }
 }
 
 pub fn layout_of_data(of:&Data) -> Layout {
